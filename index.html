@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>✨ level snake · 20 levels with cute face</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(145deg, #1a2f3f 0%, #102129 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      transition: background 0.5s ease;
+    }
+
+    .game-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      width: 100%;
+      max-width: 500px;
+    }
+
+    /* main card with dynamic glass effect */
+    .game-container {
+      position: relative;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 42px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 25px 40px -10px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+      padding: 24px 20px 30px 20px;
+      transition: background 0.4s, border-color 0.4s;
+    }
+
+    /* header: score + level + highscore + pause */
+    .stats-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding: 0 8px;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .score-card {
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      border-radius: 60px;
+      padding: 8px 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: inset 0 2px 3px rgba(0,0,0,0.3);
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .score-label {
+      font-weight: 300;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-size: 0.7rem;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .score-value {
+      font-weight: 600;
+      font-size: 1.2rem;
+      color: #ffe484;
+      text-shadow: 0 2px 5px rgba(255,215,0,0.3);
+    }
+
+    .icon-button {
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      border-radius: 50px;
+      width: 44px;
+      height: 44px;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: 0.2s;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .icon-button:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(1.02);
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    #gameCanvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 1/1;
+      border-radius: 32px;
+      background: #0d1a20;
+      box-shadow: inset 0 0 30px rgba(0,0,0,0.7), 0 15px 25px rgba(0,0,0,0.5);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      touch-action: none;
+    }
+
+    /* overlays */
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(10, 20, 28, 0.7);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      transition: opacity 0.2s ease;
+    }
+
+    .overlay-content {
+      background: rgba(30, 40, 50, 0.5);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: 40px;
+      padding: 30px 25px;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 30px 40px -20px black;
+      width: 80%;
+      max-width: 280px;
+      color: white;
+    }
+
+    .overlay-content h1, .overlay-content h2 {
+      font-weight: 300;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+      text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    }
+
+    .overlay-content p {
+      opacity: 0.8;
+      margin: 10px 0 20px;
+      font-size: 1rem;
+    }
+
+    .glass-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: white;
+      padding: 14px 30px;
+      font-size: 1.2rem;
+      font-weight: 500;
+      border-radius: 60px;
+      backdrop-filter: blur(5px);
+      cursor: pointer;
+      transition: 0.2s;
+      width: 100%;
+      margin: 8px 0;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+    }
+
+    .glass-btn:hover {
+      background: rgba(255, 255, 255, 0.25);
+      border-color: rgba(255, 255, 255, 0.5);
+      transform: scale(1.02);
+    }
+
+    .glass-btn.secondary {
+      background: rgba(0, 0, 0, 0.3);
+      border-color: rgba(255,255,255,0.15);
+      font-size: 1rem;
+    }
+
+    .mobile-hint {
+      color: rgba(255,255,240,0.5);
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      background: rgba(0,0,0,0.2);
+      padding: 8px 18px;
+      border-radius: 60px;
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    #startMenu { display: flex; }
+
+    @media (max-width: 450px) {
+      .game-container { padding: 16px 12px 20px; }
+      .score-card { padding: 5px 10px; }
+      .score-value { font-size: 1rem; }
+      .icon-button { width: 40px; height: 40px; font-size: 1.3rem; }
+    }
+  </style>
+</head>
+<body id="themeBody">
+  <div class="game-wrapper">
+    <div class="game-container" id="gameContainer">
+      <!-- header with level -->
+      <div class="stats-header">
+        <div class="score-card">
+          <span class="score-label">🍎</span>
+          <span id="scoreDisplay" class="score-value">0</span>
+        </div>
+        <div class="score-card">
+          <span class="score-label">🌟 LVL</span>
+          <span id="levelDisplay" class="score-value">1</span>
+        </div>
+        <div class="score-card">
+          <span class="score-label">🏆</span>
+          <span id="highScoreDisplay" class="score-value">0</span>
+        </div>
+        <button id="pauseButton" class="icon-button" title="pause / resume">⏸️</button>
+      </div>
+
+      <canvas id="gameCanvas" width="400" height="400"></canvas>
+
+      <!-- START MENU -->
+      <div id="startMenu" class="overlay start-menu">
+        <div class="overlay-content">
+          <h1>🐍 level snake</h1>
+          <p>20 levels · cute face · wrap</p>
+          <button id="startButton" class="glass-btn">start game</button>
+        </div>
+      </div>
+
+      <!-- PAUSE MENU -->
+      <div id="pauseMenu" class="overlay pause-menu" style="display: none;">
+        <div class="overlay-content">
+          <h2>⏸️ paused</h2>
+          <button id="resumeButton" class="glass-btn">resume</button>
+          <button id="restartFromPause" class="glass-btn secondary">restart</button>
+        </div>
+      </div>
+
+      <!-- GAME OVER MENU -->
+      <div id="gameOverMenu" class="overlay gameover-menu" style="display: none;">
+        <div class="overlay-content">
+          <h2>💀 game over</h2>
+          <p>your score: <span id="finalScore"></span></p>
+          <p>high score: <span id="finalHighScore"></span></p>
+          <p>reached level: <span id="finalLevel"></span></p>
+          <button id="restartButton" class="glass-btn">play again</button>
+        </div>
+      </div>
+    </div>
+    <div class="mobile-hint">← ↓ ↑ →  swipe · next level at 250 pts</div>
+  </div>
+
+  <script>
+    (function() {
+      // ---------- DOM ----------
+      const canvas = document.getElementById('gameCanvas');
+      const ctx = canvas.getContext('2d');
+      const scoreSpan = document.getElementById('scoreDisplay');
+      const levelSpan = document.getElementById('levelDisplay');
+      const highScoreSpan = document.getElementById('highScoreDisplay');
+      const pauseBtn = document.getElementById('pauseButton');
+      const gameContainer = document.getElementById('gameContainer');
+      const body = document.getElementById('themeBody');
+
+      // overlays
+      const startMenu = document.getElementById('startMenu');
+      const pauseMenu = document.getElementById('pauseMenu');
+      const gameOverMenu = document.getElementById('gameOverMenu');
+      const startBtn = document.getElementById('startButton');
+      const resumeBtn = document.getElementById('resumeButton');
+      const restartFromPause = document.getElementById('restartFromPause');
+      const restartBtn = document.getElementById('restartButton');
+      const finalScoreSpan = document.getElementById('finalScore');
+      const finalHighSpan = document.getElementById('finalHighScore');
+      const finalLevelSpan = document.getElementById('finalLevel');
+
+      // ---------- constants ----------
+      const GRID_SIZE = 20;
+      const CELL_SIZE = 20;
+      const TICK_INTERVAL_MS = 150;
+      const POINTS_PER_LEVEL = 250;  // advance level every 250 points
+      const MAX_LEVEL = 20;
+
+      // ---------- game state ----------
+      let snake = [{x: 10, y: 10}];
+      let food = {x: 15, y: 10};
+      let direction = {x: 1, y: 0};
+      let nextDirection = {x: 1, y: 0};
+      let score = 0;
+      let level = 1;
+      let highScore = localStorage.getItem('snakeHighScore') ? parseInt(localStorage.getItem('snakeHighScore')) : 0;
+      let gameState = 'start';
+      let gameInterval = null;
+
+      // ---------- level colors (head + body variations) ----------
+      // level 1: green, level 2: silver, level 3: gold, then gradient
+      function getSnakeColors(level) {
+        // base color for head, body slightly darker
+        let headColor, bodyColor;
+        if (level === 1) {
+          headColor = '#8bc34a'; // light green
+          bodyColor = '#5a8f2c';
+        } else if (level === 2) {
+          headColor = '#c0c0c0'; // silver
+          bodyColor = '#a0a0a0';
+        } else if (level === 3) {
+          headColor = '#ffd700'; // gold
+          bodyColor = '#e6c200';
+        } else {
+          // for levels 4-20, use HSL: hue cycles, high saturation, medium lightness
+          const hue = (level * 18) % 360; // 18° steps -> 20 levels cover 360°
+          headColor = `hsl(${hue}, 80%, 65%)`;
+          bodyColor = `hsl(${hue}, 80%, 45%)`;
+        }
+        return { headColor, bodyColor };
+      }
+
+      // ---------- update theme based on level (change background and container border) ----------
+      function updateTheme(level) {
+        // change body background gradient
+        const hue = (level * 18) % 360;
+        const lightColor = `hsl(${hue}, 70%, 20%)`;
+        const darkColor = `hsl(${hue}, 70%, 10%)`;
+        body.style.background = `linear-gradient(145deg, ${lightColor} 0%, ${darkColor} 100%)`;
+
+        // change container border color accent
+        const accent = `hsl(${hue}, 80%, 60%)`;
+        gameContainer.style.borderColor = `rgba(255, 255, 255, 0.2) rgba(255, 255, 255, 0.1) rgba(255, 255, 255, 0.1) ${accent}`;
+        // also slightly change button hover effect if desired
+      }
+
+      // ---------- update level based on score ----------
+      function updateLevelFromScore() {
+        let newLevel = Math.floor(score / POINTS_PER_LEVEL) + 1;
+        if (newLevel > MAX_LEVEL) newLevel = MAX_LEVEL;
+        if (newLevel !== level) {
+          level = newLevel;
+          levelSpan.textContent = level;
+          updateTheme(level);
+          // snake colors will be applied in draw
+        }
+      }
+
+      // ---------- helper functions (same as before) ----------
+      function updateHighScoreDisplay() {
+        highScoreSpan.textContent = highScore;
+        localStorage.setItem('snakeHighScore', highScore);
+      }
+
+      function hideAllOverlays() {
+        startMenu.style.display = 'none';
+        pauseMenu.style.display = 'none';
+        gameOverMenu.style.display = 'none';
+      }
+
+      function showStartMenu() {
+        hideAllOverlays();
+        startMenu.style.display = 'flex';
+        gameState = 'start';
+        clearGameInterval();
+      }
+
+      function showPauseMenu() {
+        if (gameState === 'playing') {
+          hideAllOverlays();
+          pauseMenu.style.display = 'flex';
+          gameState = 'paused';
+          clearGameInterval();
+        }
+      }
+
+      function showGameOverMenu() {
+        hideAllOverlays();
+        gameOverMenu.style.display = 'flex';
+        finalScoreSpan.textContent = score;
+        finalHighSpan.textContent = highScore;
+        finalLevelSpan.textContent = level;
+        gameState = 'gameover';
+        clearGameInterval();
+      }
+
+      function clearGameInterval() {
+        if (gameInterval) {
+          clearInterval(gameInterval);
+          gameInterval = null;
+        }
+      }
+
+      function startGameInterval() {
+        if (gameInterval) clearGameInterval();
+        if (gameState === 'playing') {
+          gameInterval = setInterval(() => {
+            updateGame();
+            drawCanvas();
+          }, TICK_INTERVAL_MS);
+        }
+      }
+
+      function generateRandomFood() {
+        const maxAttempts = 1000;
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+          const candidate = {
+            x: Math.floor(Math.random() * GRID_SIZE),
+            y: Math.floor(Math.random() * GRID_SIZE)
+          };
+          if (!snake.some(segment => segment.x === candidate.x && segment.y === candidate.y)) {
+            food = candidate;
+            return;
+          }
+        }
+        for (let y = 0; y < GRID_SIZE; y++) {
+          for (let x = 0; x < GRID_SIZE; x++) {
+            if (!snake.some(s => s.x === x && s.y === y)) {
+              food = {x, y};
+              return;
+            }
+          }
+        }
+      }
+
+      function resetGame() {
+        snake = [{x: 10, y: 10}];
+        direction = {x: 1, y: 0};
+        nextDirection = {x: 1, y: 0};
+        score = 0;
+        level = 1;
+        scoreSpan.textContent = '0';
+        levelSpan.textContent = '1';
+        updateTheme(1);
+        do {
+          food = {
+            x: Math.floor(Math.random() * GRID_SIZE),
+            y: Math.floor(Math.random() * GRID_SIZE)
+          };
+        } while (food.x === 10 && food.y === 10);
+        updateHighScoreDisplay();
+        drawCanvas();
+      }
+
+      function updateGame() {
+        if (gameState !== 'playing') return;
+
+        // apply queued direction
+        if ((nextDirection.x !== 0 || nextDirection.y !== 0) &&
+            (direction.x !== -nextDirection.x || direction.y !== -nextDirection.y)) {
+          direction = {...nextDirection};
+        }
+
+        const head = snake[0];
+        let newHead = {
+          x: head.x + direction.x,
+          y: head.y + direction.y
+        };
+
+        // wrap around
+        if (newHead.x < 0) newHead.x = GRID_SIZE - 1;
+        else if (newHead.x >= GRID_SIZE) newHead.x = 0;
+        if (newHead.y < 0) newHead.y = GRID_SIZE - 1;
+        else if (newHead.y >= GRID_SIZE) newHead.y = 0;
+
+        const foodEaten = (newHead.x === food.x && newHead.y === food.y);
+        let newSnake = [newHead, ...snake];
+
+        if (foodEaten) {
+          snake = newSnake;
+          score += 10;
+          scoreSpan.textContent = score;
+          if (score > highScore) {
+            highScore = score;
+            updateHighScoreDisplay();
+          }
+          generateRandomFood();
+          // check for level up
+          updateLevelFromScore();
+        } else {
+          newSnake.pop();
+          snake = newSnake;
+        }
+
+        // self-collision
+        const headPos = snake[0];
+        if (snake.slice(1).some(segment => segment.x === headPos.x && segment.y === headPos.y)) {
+          if (score > highScore) {
+            highScore = score;
+            updateHighScoreDisplay();
+          }
+          showGameOverMenu();
+          drawCanvas();
+          return;
+        }
+      }
+
+      // ---------- drawing with face and level colors ----------
+      function drawCanvas() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // draw subtle grid
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+        ctx.lineWidth = 0.5;
+        for (let i = 0; i <= GRID_SIZE; i++) {
+          ctx.beginPath();
+          ctx.moveTo(i * CELL_SIZE, 0);
+          ctx.lineTo(i * CELL_SIZE, canvas.height);
+          ctx.strokeStyle = 'rgba(200, 230, 255, 0.1)';
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(0, i * CELL_SIZE);
+          ctx.lineTo(canvas.width, i * CELL_SIZE);
+          ctx.stroke();
+        }
+
+        // draw food
+        ctx.shadowColor = '#ffb347';
+        ctx.shadowBlur = 15;
+        ctx.beginPath();
+        ctx.arc(food.x * CELL_SIZE + CELL_SIZE/2, food.y * CELL_SIZE + CELL_SIZE/2, CELL_SIZE/2 - 2, 0, Math.PI * 2);
+        ctx.fillStyle = '#ff4d4d';
+        ctx.fill();
+        ctx.shadowBlur = 5;
+        ctx.beginPath();
+        ctx.arc(food.x * CELL_SIZE + 8, food.y * CELL_SIZE + 8, 3, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff9c4';
+        ctx.fill();
+
+        // get colors for current level
+        const { headColor, bodyColor } = getSnakeColors(level);
+
+        // draw snake segments with face on head
+        ctx.shadowColor = '#00cc99';
+        ctx.shadowBlur = 12;
+        snake.forEach((segment, index) => {
+          const x = segment.x * CELL_SIZE;
+          const y = segment.y * CELL_SIZE;
+          const isHead = (index === 0);
+          const fillColor = isHead ? headColor : bodyColor;
+
+          // draw segment
+          ctx.fillStyle = fillColor;
+          ctx.globalAlpha = 0.9;
+          ctx.beginPath();
+          ctx.roundRect(x + 2, y + 2, CELL_SIZE - 4, CELL_SIZE - 4, 6);
+          ctx.fill();
+
+          // inner shine
+          ctx.globalAlpha = 0.3;
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.roundRect(x + 4, y + 3, CELL_SIZE - 10, 5, 2);
+          ctx.fill();
+
+          // if head, draw cute face (eyes and tongue)
+          if (isHead) {
+            ctx.globalAlpha = 1.0;
+            ctx.shadowBlur = 0; // no shadow on face details
+
+            // eyes (two white circles with black pupils)
+            // position depends on direction? for simplicity, always place near top of head
+            const eyeXOffset = 5;  // from left
+            const eyeYOffset = 6;  // from top
+            const eyeSpacing = 8;
+
+            // left eye
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(x + eyeXOffset, y + eyeYOffset, 3, 0, 2 * Math.PI);
+            ctx.fill();
+            // right eye
+            ctx.beginPath();
+            ctx.arc(x + eyeXOffset + eyeSpacing, y + eyeYOffset, 3, 0, 2 * Math.PI);
+            ctx.fill();
+
+            // pupils (black)
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.arc(x + eyeXOffset - 1, y + eyeYOffset - 1, 1.2, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(x + eyeXOffset + eyeSpacing - 1, y + eyeYOffset - 1, 1.2, 0, 2 * Math.PI);
+            ctx.fill();
+
+            // tongue (small red dot)
+            ctx.fillStyle = '#ff4444';
+            ctx.beginPath();
+            ctx.arc(x + 12, y + 14, 2, 0, 2 * Math.PI);
+            ctx.fill();
+          }
+        });
+
+        ctx.globalAlpha = 1.0;
+        ctx.shadowBlur = 0;
+      }
+
+      // roundRect helper
+      CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+        if (w < 2 * r) r = w / 2;
+        if (h < 2 * r) r = h / 2;
+        this.moveTo(x + r, y);
+        this.lineTo(x + w - r, y);
+        this.quadraticCurveTo(x + w, y, x + w, y + r);
+        this.lineTo(x + w, y + h - r);
+        this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        this.lineTo(x + r, y + h);
+        this.quadraticCurveTo(x, y + h, x, y + h - r);
+        this.lineTo(x, y + r);
+        this.quadraticCurveTo(x, y, x + r, y);
+        this.closePath();
+        return this;
+      };
+
+      // ---------- controls ----------
+      function handleKeyDown(e) {
+        const key = e.key;
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'W', 'A', 'S', 'D', 'a', 's', 'd', ' ', 'p', 'P'].includes(key)) {
+          e.preventDefault();
+        }
+
+        if (gameState === 'playing') {
+          switch (key) {
+            case 'ArrowUp': case 'w': case 'W':
+              if (direction.y !== 1) nextDirection = {x: 0, y: -1}; break;
+            case 'ArrowDown': case 's': case 'S':
+              if (direction.y !== -1) nextDirection = {x: 0, y: 1}; break;
+            case 'ArrowLeft': case 'a': case 'A':
+              if (direction.x !== 1) nextDirection = {x: -1, y: 0}; break;
+            case 'ArrowRight': case 'd': case 'D':
+              if (direction.x !== -1) nextDirection = {x: 1, y: 0}; break;
+          }
+        }
+
+        if (key === 'p' || key === 'P') {
+          if (gameState === 'playing') showPauseMenu();
+          else if (gameState === 'paused') resumeGame();
+        }
+      }
+
+      function resumeGame() {
+        if (gameState === 'paused') {
+          hideAllOverlays();
+          gameState = 'playing';
+          startGameInterval();
+          drawCanvas();
+        }
+      }
+
+      // touch swipe
+      let touchStart = {x: 0, y: 0};
+      canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        touchStart.x = touch.clientX;
+        touchStart.y = touch.clientY;
+      }, {passive: false});
+
+      canvas.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        if (gameState !== 'playing' || !touchStart.x) return;
+        const touchEnd = e.changedTouches[0];
+        const dx = touchEnd.clientX - touchStart.x;
+        const dy = touchEnd.clientY - touchStart.y;
+        const absDx = Math.abs(dx);
+        const absDy = Math.abs(dy);
+        if (Math.max(absDx, absDy) < 15) return;
+        if (absDx > absDy) {
+          if (dx > 0 && direction.x !== -1) nextDirection = {x: 1, y: 0};
+          else if (dx < 0 && direction.x !== 1) nextDirection = {x: -1, y: 0};
+        } else {
+          if (dy > 0 && direction.y !== -1) nextDirection = {x: 0, y: 1};
+          else if (dy < 0 && direction.y !== 1) nextDirection = {x: 0, y: -1};
+        }
+        touchStart.x = 0;
+      }, {passive: false});
+
+      // event listeners
+      window.addEventListener('keydown', handleKeyDown);
+
+      startBtn.addEventListener('click', () => {
+        resetGame();
+        hideAllOverlays();
+        gameState = 'playing';
+        startGameInterval();
+        drawCanvas();
+      });
+
+      pauseBtn.addEventListener('click', () => {
+        if (gameState === 'playing') showPauseMenu();
+        else if (gameState === 'paused') resumeGame();
+      });
+
+      resumeBtn.addEventListener('click', resumeGame);
+
+      restartFromPause.addEventListener('click', () => {
+        resetGame();
+        hideAllOverlays();
+        gameState = 'playing';
+        startGameInterval();
+        drawCanvas();
+      });
+
+      restartBtn.addEventListener('click', () => {
+        resetGame();
+        hideAllOverlays();
+        gameState = 'playing';
+        startGameInterval();
+        drawCanvas();
+      });
+
+      canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+      // initial
+      resetGame();
+      showStartMenu();
+      drawCanvas();
+      updateTheme(1);
+    })();
+  </script>
+</body>
+</html>
